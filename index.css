@@ -1,0 +1,26 @@
+body {
+    background-color: rgb(130, 130, 130);
+    color: white;
+}
+html, body {
+    width:  100%;
+    height: 100%;
+    margin: 0;
+}
+#startGameBut{
+    position: fixed;
+    margin: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
+    padding: 20px;
+    width: fit-content;
+    height: fit-content;
+    font-size: 2em;
+    border:solid black;
+}
+#gameCanvas {
+    display: block;
+    margin: 0;
+}

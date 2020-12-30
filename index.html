@@ -1,16 +1,191 @@
 <!doctype html>
 <html lang="HTML">
-    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-    
-    <link rel="stylesheet" href="index.css">
-    
-    <head>
-        <title>FirstGameNamePending</title>
-    </head>
-    <body>
-        Test 123
-    </body>
+<script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+<link rel="stylesheet" href="index.css">
+
+<head>
+    <title>FirstGameNamePending</title>
+</head>
+
+
+<FirstGameNamePending></FirstGameNamePending>
+
+<script type="text/babel">
+    class FirstGameNamePending extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                gameCanvas : null,
+                gameStarted : false,
+                playerX: 0,
+                playerY: 0,
+                up: false,
+                down: false,
+                left: false,
+                right: false,
+            };
+        }
+        componentDidMount(){
+            this.keyDownHandler = this.keyDownHandler.bind(this);
+            this.keyUpHandler = this.keyUpHandler.bind(this);
+
+            this.startGame = this.startGame.bind(this);
+            this.resizeCanvas = this.resizeCanvas.bind(this);
+            this.draw = this.draw.bind(this);
+            document.addEventListener("keydown", this.keyDownHandler);
+            document.addEventListener("keyup", this.keyUpHandler);
+
+            const canvas = document.getElementById("gameCanvas")
+            this.setState({
+                gameCanvas: canvas,
+                playerX: canvas.width/2,
+                playerY: canvas.height-30
+            })
+        }
+        keyDownHandler(e) {
+            console.log(e.key);
+            switch (e.key) {
+                case("w"):
+                    this.setState({
+                        up: true,
+                    })
+                    break;
+                case("s"):
+                    this.setState({
+                        down: true,
+                    })
+                    break;
+                case("a"):
+                    this.setState({
+                        left: true,
+                    })
+                    break;
+                case("d"):
+                    this.setState({
+                        right: true,
+                    })
+                    break;
+            }
+        }
+
+        keyUpHandler(e) {
+            console.log(e.key);
+            switch (e.key) {
+                case("w"):
+                    this.setState({
+                        up: false,
+                    })
+                    break;
+                case("s"):
+                    this.setState({
+                        down: false,
+                    })
+                    break;
+                case("a"):
+                    this.setState({
+                        left: false,
+                    })
+                    break;
+                case("d"):
+                    this.setState({
+                        right: false,
+                    })
+                    break;
+            }
+        }
+
+        resizeCanvas() {
+            this.state.gameCanvas.width = window.innerWidth;
+            this.state.gameCanvas.height = window.innerHeight;
+        }
+        drawBall() {
+            const ctx = this.state.gameCanvas.getContext("2d")
+            console.log(this.state)
+            this.resizeCanvas()
+            ctx.beginPath();
+            ctx.arc(this.state.playerX, this.state.playerY , 10, 0, Math.PI*2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        draw() {
+            const ctx = this.state.gameCanvas.getContext("2d")
+            ctx.clearRect(0, 0, this.state.gameCanvas.width, this.state.gameCanvas.height);
+            this.drawBall();
+            if (this.state.up) {
+                this.setState({
+                    playerY : this.state.playerY - 1,
+                })
+            }
+            if (this.state.down) {
+                this.setState({
+                    playerY : this.state.playerY + 1,
+                })
+            }
+            if (this.state.left) {
+                this.setState({
+                    playerX : this.state.playerX - 1,
+                })
+            }
+            if (this.state.right) {
+                this.setState({
+                    playerX : this.state.playerX + 1,
+                })
+            }
+
+            // if(x + dx > canvas.width-ballRadius || x + dx < ballRadius) {
+            //     dx = -dx;
+            // }
+            // if(y + dy > canvas.height-ballRadius || y + dy < ballRadius) {
+            //     dy = -dy;
+            // }
+            //
+            // if(rightPressed) {
+            //     paddleX += 7;
+            //     if (paddleX + paddleWidth > canvas.width){
+            //         paddleX = canvas.width - paddleWidth;
+            //     }
+            // }
+            // else if(leftPressed) {
+            //     paddleX -= 7;
+            //     if (paddleX < 0){
+            //         paddleX = 0;
+            //     }
+            // }
+            //
+            // x += dx;
+            // y += dy;
+        }
+        startGame() {
+            this.drawBall();
+            this.setState({
+                gameStarted: true,
+            })
+            setInterval(this.draw, 10);
+        }
+
+        render() {
+            //if the  game has started , dont return the start btn.
+            if (this.state.gameStarted){
+                return ([
+                    <canvas key="gameCanvas" id="gameCanvas"/>
+                ]
+              )
+            } else {
+                return ([
+                        <input key="startGameBut" type="button" id="startGameBut" value="Start Game" onClick={this.startGame}/>,
+                        <canvas key="gameCanvas" id="gameCanvas"/>
+                    ]
+                )
+            }
+        }
+    }
+    ReactDOM.render(<FirstGameNamePending/>, document.querySelector('FirstGameNamePending'));
+</script>
 </html>
+
