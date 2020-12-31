@@ -11,181 +11,114 @@
     <title>FirstGameNamePending</title>
 </head>
 
-
-<FirstGameNamePending></FirstGameNamePending>
+<canvas id="gameCanvas"></canvas>
+<input type="button" id="startGameBut" value="Start Game"/>
 
 <script type="text/babel">
-    class FirstGameNamePending extends React.Component {
-        constructor(props) {
-            super(props);
-            this.state = {
-                gameCanvas : null,
-                gameStarted : false,
-                playerX: 0,
-                playerY: 0,
-                up: false,
-                down: false,
-                left: false,
-                right: false,
-            };
-        }
-        componentDidMount(){
-            this.keyDownHandler = this.keyDownHandler.bind(this);
-            this.keyUpHandler = this.keyUpHandler.bind(this);
+    const gameCanvas = document.getElementById("gameCanvas");
+    const playerRadius = 10;
 
-            this.startGame = this.startGame.bind(this);
-            this.resizeCanvas = this.resizeCanvas.bind(this);
-            this.draw = this.draw.bind(this);
-            document.addEventListener("keydown", this.keyDownHandler);
-            document.addEventListener("keyup", this.keyUpHandler);
+    let gameStarted = false;
+    let playerX = 0;
+    let playerY = 0;
+    let up = false;
+    let down = false;
+    let left = false;
+    let right = false;
+    
+    $('document').ready(function(){
+        init();
+    });
 
-            const canvas = document.getElementById("gameCanvas")
-            this.setState({
-                gameCanvas: canvas,
-                playerX: canvas.width/2,
-                playerY: canvas.height-30
-            })
-        }
-        keyDownHandler(e) {
-            console.log(e.key);
-            switch (e.key) {
-                case("w"):
-                    this.setState({
-                        up: true,
-                    })
-                    break;
-                case("s"):
-                    this.setState({
-                        down: true,
-                    })
-                    break;
-                case("a"):
-                    this.setState({
-                        left: true,
-                    })
-                    break;
-                case("d"):
-                    this.setState({
-                        right: true,
-                    })
-                    break;
-            }
-        }
+    function init() {
+        gameCanvas.width = window.innerWidth;
+        gameCanvas.height = window.innerHeight;
+        playerX = gameCanvas.width/2;
+        playerY = gameCanvas.height - 30;
+        document.addEventListener("keydown", keyDownHandler);
+        document.addEventListener("keyup", keyUpHandler);
+        $("#startGameBut").on("click", startGame)
+    }
 
-        keyUpHandler(e) {
-            console.log(e.key);
-            switch (e.key) {
-                case("w"):
-                    this.setState({
-                        up: false,
-                    })
-                    break;
-                case("s"):
-                    this.setState({
-                        down: false,
-                    })
-                    break;
-                case("a"):
-                    this.setState({
-                        left: false,
-                    })
-                    break;
-                case("d"):
-                    this.setState({
-                        right: false,
-                    })
-                    break;
-            }
-        }
-
-        resizeCanvas() {
-            this.state.gameCanvas.width = window.innerWidth;
-            this.state.gameCanvas.height = window.innerHeight;
-        }
-        drawBall() {
-            const ctx = this.state.gameCanvas.getContext("2d")
-            console.log(this.state)
-            this.resizeCanvas()
-            ctx.beginPath();
-            ctx.arc(this.state.playerX, this.state.playerY , 10, 0, Math.PI*2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        draw() {
-            const ctx = this.state.gameCanvas.getContext("2d")
-            ctx.clearRect(0, 0, this.state.gameCanvas.width, this.state.gameCanvas.height);
-            this.drawBall();
-            if (this.state.up) {
-                this.setState({
-                    playerY : this.state.playerY - 1,
-                })
-            }
-            if (this.state.down) {
-                this.setState({
-                    playerY : this.state.playerY + 1,
-                })
-            }
-            if (this.state.left) {
-                this.setState({
-                    playerX : this.state.playerX - 1,
-                })
-            }
-            if (this.state.right) {
-                this.setState({
-                    playerX : this.state.playerX + 1,
-                })
-            }
-
-            // if(x + dx > canvas.width-ballRadius || x + dx < ballRadius) {
-            //     dx = -dx;
-            // }
-            // if(y + dy > canvas.height-ballRadius || y + dy < ballRadius) {
-            //     dy = -dy;
-            // }
-            //
-            // if(rightPressed) {
-            //     paddleX += 7;
-            //     if (paddleX + paddleWidth > canvas.width){
-            //         paddleX = canvas.width - paddleWidth;
-            //     }
-            // }
-            // else if(leftPressed) {
-            //     paddleX -= 7;
-            //     if (paddleX < 0){
-            //         paddleX = 0;
-            //     }
-            // }
-            //
-            // x += dx;
-            // y += dy;
-        }
-        startGame() {
-            this.drawBall();
-            this.setState({
-                gameStarted: true,
-            })
-            setInterval(this.draw, 10);
-        }
-
-        render() {
-            //if the  game has started , dont return the start btn.
-            if (this.state.gameStarted){
-                return ([
-                    <canvas key="gameCanvas" id="gameCanvas"/>
-                ]
-              )
-            } else {
-                return ([
-                        <input key="startGameBut" type="button" id="startGameBut" value="Start Game" onClick={this.startGame}/>,
-                        <canvas key="gameCanvas" id="gameCanvas"/>
-                    ]
-                )
-            }
+    function keyDownHandler(e) {
+        console.log(e.key);
+        switch (e.key) {
+            case("w"):
+                up = true;
+                break;
+            case("s"):
+                down = true;
+                break;
+            case("a"):
+                left = true;
+                break;
+            case("d"):
+                right = true;
+                break;
         }
     }
-    ReactDOM.render(<FirstGameNamePending/>, document.querySelector('FirstGameNamePending'));
+
+    function keyUpHandler(e) {
+        console.log(e.key);
+        switch (e.key) {
+            case("w"):
+                up = false;
+                break;
+            case("s"):
+                down = false;
+                break;
+            case("a"):
+                left = false;
+                break;
+            case("d"):
+                right = false;
+                break;
+        }
+    }
+    
+    function drawPlayer() {
+        const ctx = gameCanvas.getContext("2d")
+        ctx.beginPath();
+        ctx.arc(playerX, playerY , playerRadius, 0, Math.PI*2);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function draw() {
+        const ctx = gameCanvas.getContext("2d")
+        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+        drawPlayer();
+        let dx = 0;
+        let dy = 0;
+        if (up) {
+            dy = -1;
+        }
+        if (down) {
+            dy = 1;
+        }
+        if (left) {
+            dx = -1;
+        }
+        if (right) {
+            dx = 1;
+        }
+
+        if(playerX + dx > gameCanvas.width - playerRadius || playerX + dx < playerRadius) {
+            dx = -dx;
+        }
+        if(playerY + dy > gameCanvas.height - playerRadius || playerY + dy < playerRadius) {
+            dy = -dy;
+        }
+
+        playerX += dx;
+        playerY += dy;
+    }
+    function startGame() {
+        gameStarted = true;
+        setInterval(draw, 10);
+        $("#startGameBut").css("display", "none")
+    }
 </script>
 </html>
 
