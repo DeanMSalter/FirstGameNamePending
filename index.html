@@ -1,10 +1,6 @@
 <!doctype html>
 <html lang="HTML">
-<script src="https://unpkg.com/react@16/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-
 <link rel="stylesheet" href="index.css">
 
 <head>
@@ -13,11 +9,20 @@
 
 <canvas id="gameCanvas"></canvas>
 <input type="button" id="startGameBut" value="Start Game"/>
-
-<script type="text/babel">
+<script>
     const gameCanvas = document.getElementById("gameCanvas");
-    const playerRadius = 10;
-
+    const playerWidth = 50;
+    const playerHeight = 75;
+    const enemyWidth = 50;
+    const enemyHeight = 75;
+    let currentEnemyId = 0;
+    const bulletRadius = 1;
+    const playerImage = new Image();
+    playerImage.src = "mainCharacter3.png";
+    const humanEnemyImage = new Image();
+    humanEnemyImage.src = "humanEnemy1.png";
+    let playerBullets = [];
+    let enemies = [];
     let gameStarted = false;
     let playerX = 0;
     let playerY = 0;
@@ -25,23 +30,17 @@
     let down = false;
     let left = false;
     let right = false;
-    
+
+    let enemySpeed = 100;
+    let playerSpeed = 1;
+    let mouseX = 0;
+    let mouseY = 0;
     $('document').ready(function(){
         init();
     });
 
-    function init() {
-        gameCanvas.width = window.innerWidth;
-        gameCanvas.height = window.innerHeight;
-        playerX = gameCanvas.width/2;
-        playerY = gameCanvas.height - 30;
-        document.addEventListener("keydown", keyDownHandler);
-        document.addEventListener("keyup", keyUpHandler);
-        $("#startGameBut").on("click", startGame)
-    }
-
+    // --- Listeners ---
     function keyDownHandler(e) {
-        console.log(e.key);
         switch (e.key) {
             case("w"):
                 up = true;
@@ -55,11 +54,25 @@
             case("d"):
                 right = true;
                 break;
+            case("Escape"):
+                $("html").focus();
+                break;
+            case(" "):
+                createPlayerBullet();
+                break;
         }
     }
 
+    function mouseDownHandler(e) {
+        createPlayerBullet();
+    }
+
+    function mouseMoveHandler(e) {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    }
+
     function keyUpHandler(e) {
-        console.log(e.key);
         switch (e.key) {
             case("w"):
                 up = false;
@@ -73,52 +86,255 @@
             case("d"):
                 right = false;
                 break;
+            case("e"):
+                createEnemy();
         }
     }
-    
+
+
+    // --- drawing ---
+    function drawBullets() {
+        const ctx = gameCanvas.getContext("2d")
+        for(let i = 0; i < playerBullets.length; i++) {
+            let currentBullet = playerBullets[i];
+            drawBall(ctx, currentBullet.x, currentBullet.y, currentBullet.radius, currentBullet.fillStyle)
+        }
+
+    }
+
+    function drawEnemies() {
+        const ctx = gameCanvas.getContext("2d")
+        for(let i = 0; i < enemies.length; i++) {
+            let currentEnemy = enemies[i];
+            ctx.drawImage(humanEnemyImage, currentEnemy.x, currentEnemy.y, currentEnemy.width, currentEnemy.height);
+        }
+    }
+
     function drawPlayer() {
         const ctx = gameCanvas.getContext("2d")
-        ctx.beginPath();
-        ctx.arc(playerX, playerY , playerRadius, 0, Math.PI*2);
-        ctx.fillStyle = "#0095DD";
-        ctx.fill();
-        ctx.closePath();
+        ctx.drawImage(playerImage, playerX, playerY, playerWidth, playerHeight);
     }
 
-    function draw() {
-        const ctx = gameCanvas.getContext("2d")
-        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-        drawPlayer();
-        let dx = 0;
-        let dy = 0;
-        if (up) {
-            dy = -1;
-        }
-        if (down) {
-            dy = 1;
-        }
-        if (left) {
-            dx = -1;
-        }
-        if (right) {
-            dx = 1;
-        }
 
-        if(playerX + dx > gameCanvas.width - playerRadius || playerX + dx < playerRadius) {
-            dx = -dx;
+    // --- create ---
+    function createEntity(typeOfEntity, id, x, y, width, height, dX, dY, fillStyle, movementDelay = 0) {
+        let newEntity =  {
+            id: id,
+            x : x,
+            y : y,
+            width: width,
+            height: height,
+            dX : dX,
+            dY : dY,
+            fillStyle: fillStyle,
+            movementDelay: movementDelay,
+            movementCounter: movementDelay,
+            conflicted: false,
+            active: false,
         }
-        if(playerY + dy > gameCanvas.height - playerRadius || playerY + dy < playerRadius) {
-            dy = -dy;
-        }
-
-        playerX += dx;
-        playerY += dy;
+        typeOfEntity.push(newEntity);
     }
+
+    function createPlayerBullet() {
+        let posX = mouseX - gameCanvas.getBoundingClientRect().left; //mouse x position
+        let posY = mouseY - gameCanvas.getBoundingClientRect().top;
+
+        let directionX = posX - (playerX + playerWidth/2);
+        let directionY = posY - (playerY + playerHeight/2);
+
+        let len = Math.sqrt(directionX * directionX + directionY * directionY);
+        directionX /= len;
+        directionY /= len;
+
+        let newBullet =  {
+            x : playerX + playerWidth/2,
+            y : playerY + playerHeight/2,
+            radius : bulletRadius,
+            dX : directionX,
+            dY : directionY,
+            fillStyle: "#000000",
+        }
+        playerBullets.push(newBullet);
+    }
+
+    function createEnemy() {
+        let direction = Math.floor((Math.random() * 4) + 1);
+        let randomX = Math.floor((Math.random() * gameCanvas.width) + 1);
+        let randomY = Math.floor((Math.random() * gameCanvas.height) + 1);
+        let x = 0;
+        let y = 0;
+        let dX = 0;
+        let dY = 0;
+
+        switch(direction) {
+            case(1):
+                x = 0;
+                y = randomY;
+                dX = enemySpeed;
+                dY = 0;
+                break;
+            case(2):
+                x = randomX;
+                y = 0;
+                dX = 0;
+                dY = enemySpeed;
+                break;
+            case(3):
+                x = gameCanvas.width;
+                y = randomY;
+                dX = -enemySpeed;
+                dY = 0;
+                break;
+            case(4):
+                x = randomX;
+                y = gameCanvas.height;
+                dX = 0;
+                dY = -enemySpeed;
+                break;
+        }
+        createEntity(enemies, currentEnemyId, x, y, enemyWidth, enemyHeight, dX, dY, "#ff0000", 250)
+        currentEnemyId += 1;
+    }
+
+    // --- game flow ---
+    function init() {
+        gameCanvas.width = window.innerWidth;
+        gameCanvas.height = window.innerHeight;
+        playerX = gameCanvas.width/2;
+        playerY = gameCanvas.height/2;
+        document.addEventListener("keydown", keyDownHandler);
+        document.addEventListener("keyup", keyUpHandler);
+        gameCanvas.addEventListener("mousedown", mouseDownHandler);
+        gameCanvas.addEventListener("mousemove", mouseMoveHandler);
+
+        $("#startGameBut").on("click", startGame)
+    }
+
     function startGame() {
         gameStarted = true;
         setInterval(draw, 10);
         $("#startGameBut").css("display", "none")
     }
+
+    function draw() {
+        console.log("drawing")
+        const ctx = gameCanvas.getContext("2d")
+        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+        drawPlayer();
+        drawBullets();
+        drawEnemies();
+        let dx = 0;
+        let dy = 0;
+        if (up) {
+            dy = -playerSpeed;
+        }
+        if (down) {
+            dy = playerSpeed;
+        }
+        if (left) {
+            dx = -playerSpeed;
+        }
+        if (right) {
+            dx = playerSpeed;
+        }
+
+        if(playerX + dx > gameCanvas.width - playerWidth || playerX + dx < 0) {
+            dx = -dx;
+        }
+        if(playerY + dy > gameCanvas.height - playerHeight || playerY + dy < 0) {
+            dy = -dy;
+        }
+
+        playerX += dx;
+        playerY += dy;
+
+        for(let i = 0; i < playerBullets.length; i++) {
+            let currentBullet = playerBullets[i];
+            currentBullet.x +=  currentBullet.dX;
+            currentBullet.y += currentBullet.dY;
+            if(currentBullet.x + currentBullet.dX > gameCanvas.width - currentBullet.radius || currentBullet.x + currentBullet.dX < currentBullet.radius) {
+                playerBullets.splice(i, 1);
+            } else if(currentBullet.y + dy > gameCanvas.height - currentBullet.radius || currentBullet.y + currentBullet.dY < currentBullet.radius) {
+                playerBullets.splice(i, 1);
+            } else {
+                playerBullets[i] = currentBullet;
+            }
+        }
+
+        for(let i = 0; i < enemies.length; i++) {
+            let currentEnemy = enemies[i];
+            let move = true;
+            currentEnemy.conflicted = false;
+            move = !conflictWithOtherEnemy(currentEnemy);
+            if (currentEnemy.movementCounter >= 0 ||
+                (Math.abs(currentEnemy.x - playerX) <= 200 && Math.abs(currentEnemy.y - playerY) <= 200)) {
+                move = false;
+            }
+            if (move) {
+                moveEnemy(currentEnemy, i);
+                currentEnemy.movementCounter = currentEnemy.movementDelay;
+            } else {
+                currentEnemy.movementCounter -= 1;
+            }
+            enemies[i] = currentEnemy;
+        }
+    }
+
+
+    // --- misc / util ---
+    function drawBall(ctx,x,y,r,fill) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.closePath();
+    }
+    function conflictWithOtherEnemy(currentEnemy) {
+        for (let o = 0; o < enemies.length; o++) {
+            let selectedEnemy = enemies[o];
+            if (selectedEnemy.id === currentEnemy.id || currentEnemy.conflicted) {
+                console.log("FIRST IF")
+                continue;
+            }
+            if (Math.abs(selectedEnemy.x - currentEnemy.x) <= 100 && Math.abs(selectedEnemy.x - currentEnemy.x) <= 100) {
+                console.log("SECOND IF")
+                currentEnemy.conflicted = true;
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function moveEnemy(enemy, index) {
+        enemy.x += enemy.dX;
+        enemy.y += enemy.dY;
+        if(enemy.active &&
+            (enemy.x > gameCanvas.width  || enemy.x < 0)) {
+            enemies.splice(index, 1);
+        } else if(enemy.active &&
+            (enemy.y > gameCanvas.height || enemy.y < 0)) {
+            enemies.splice(index, 1);
+        } else {
+            enemy.active = true;
+            let newDirection = turnTowardsPlayer(enemy);
+            enemy.dX = newDirection.dX;
+            enemy.dY = newDirection.dY;
+        }
+    }
+
+
+    function turnTowardsPlayer(currentEntity) {
+        let directionX = playerX - (currentEntity.x);
+        let directionY = playerY - (currentEntity.y);
+        let len = Math.sqrt(directionX * directionX + directionY * directionY);
+        directionX /= len;
+        directionY /= len;
+        return {
+            dX: directionX * enemySpeed,
+            dY: directionY * enemySpeed,
+        };
+    }
+
 </script>
 </html>
 
